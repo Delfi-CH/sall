@@ -1,0 +1,3 @@
+LDR X 42
+PRT X
+HLT
