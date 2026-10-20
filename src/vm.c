@@ -2,13 +2,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include "../include/tinyvm.h"
 
 #define STACK_SIZE 256
+#define MEM_SIZE 1024
 #define MAX_PROGRAM_LENGTH 1024
 #define LINE_LENGTH 5
 
 static int stack[STACK_SIZE];
+static int memory[MEM_SIZE];
 
 static int registers[REGISTER_SIZE];
 
@@ -26,14 +29,10 @@ bool is_jmp = false;
 #define SP (registers[SP])
 #define PC (registers[PC])
 
-/** fetch current instruction set */
-// #define FETCH (test_a[IP])
-// #define FETCH (test_b[IP])
-#define FETCH (program[PC])
-
 /** prints the stack from A to B */
 void print_stack()
 {
+    printf("Stack Dump:\n");
     for (int i = 0; i < SP; i++)
     {
         printf("0x%04d ", stack[i]);
@@ -59,6 +58,27 @@ void print_registers()
             printf("\n");
         }
     }
+    printf("\n");
+}
+
+void print_memory()
+{
+    time_t unixtime = time(NULL);
+    long int unixtime_int = (long int)unixtime;
+    char filename[512];
+    snprintf(filename, 512, "tvm-memdump-%d", unixtime_int);
+    FILE *file = fopen(filename, "w");
+    printf("Writing Memory Dump to file %s\n", filename);
+    for (int i = 0; i < MEM_SIZE; i++)
+    {
+        fprintf(file, "%04d ", memory[i]);
+        if ((i + 1) % 4 == 0)
+        {
+            fprintf(file, "\n");
+        }
+    }
+    fprintf(file, "\n");
+    fclose(file);
 }
 
 bool is_register(int value)
@@ -541,9 +561,10 @@ void eval(int instruction[LINE_LENGTH])
     case INVALID:
     {
         running = false;
-        printf("error: invalid instruction at %d\n, bad instruction or missing operands", PC);
+        printf("error: invalid instruction at %d, bad instruction or missing operands\n", PC);
         print_stack();
         print_registers();
+        print_memory();
         break;
     }
     case NOREGISTER:
@@ -552,6 +573,7 @@ void eval(int instruction[LINE_LENGTH])
         printf("error: invalid instruction at %d, register %d doesnt exist\n", PC, instruction[1]);
         print_stack();
         print_registers();
+        print_memory();
         break;
     }
     case STOVERFLOW:
@@ -560,6 +582,7 @@ void eval(int instruction[LINE_LENGTH])
         printf("error: stack overflow at %d\n", PC);
         print_stack();
         print_registers();
+        print_memory();
         break;
     }
     case STUNDERFLOW:
@@ -568,6 +591,7 @@ void eval(int instruction[LINE_LENGTH])
         printf("error: stack undeflow at %d\n", PC);
         print_stack();
         print_registers();
+        print_memory();
         break;
     }
     case DIVZERO:
@@ -576,6 +600,7 @@ void eval(int instruction[LINE_LENGTH])
         printf("error: divide by zero at %d\n", PC);
         print_stack();
         print_registers();
+        print_memory();
         break;
     }
     case PCOOB:
@@ -584,6 +609,7 @@ void eval(int instruction[LINE_LENGTH])
         printf("error: program counter out of bounds\n");
         print_stack();
         print_registers();
+        print_memory();
         break;
     }
     default:
