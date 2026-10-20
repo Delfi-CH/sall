@@ -1,12 +1,12 @@
-all: tinyvm tinyvm-as
+all: tvm tvm-as
 
-tinyvm: src/vm.c src/shared.c
-	$(CC) src/vm.c src/shared.c -o tinyvm
+tvm: src/vm.c src/shared.c
+	$(CC) src/vm.c src/shared.c -o tvm
 
-tinyvm-as: src/as.c src/shared.c
-	$(CC) src/as.c src/shared.c -o tinyvm-as
+tvm-as: src/as.c src/shared.c
+	$(CC) src/as.c src/shared.c -o tvm-as
 
 .PHONY: clean
 
 clean:
-	rm -f tinyvm tinyvm-as
+	rm -f tvm*

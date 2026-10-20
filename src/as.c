@@ -6,21 +6,25 @@
 #define MAX_FILE_LENGTH 1024
 #define LINE_LENGTH 512
 
-int *eval_line(char *line)
+typedef struct {
+    int *arr;
+    int length;
+} LineResult;
+
+LineResult *eval_line(char *line)
 {
     char tokarr[5][64];
     char *token = strtok(line, " ");
-    static int result[5] = {0};
 
     int count = 0;
 
     while (token != NULL)
     {
         strcpy(tokarr[count++], token);
-
         token = strtok(NULL, " ");
     }
 
+    int *arr = malloc(count * sizeof(int));
     for (int i = 0; i < count; i++)
     {
         int got = atoi(tokarr[i]);
@@ -36,15 +40,15 @@ int *eval_line(char *line)
             {
                 got = reg;
             }
-            else
-            {
-                got = 0;
-            }
         }
-        result[i] = got;
+        arr[i] = got;
     }
 
-    return result;
+    static LineResult result;
+    result.arr = arr;
+    result.length = count;
+
+    return &result;
 }
 
 int main(int argc, char **argv)
@@ -93,10 +97,10 @@ int main(int argc, char **argv)
     for (int i = 0; i < count; i++)
     {
         char out[12];
-        int *result = eval_line(linearr[i]);
-        for (int j = 0; j < 5; j++)
+        LineResult *result = eval_line(linearr[i]);
+        for (int j = 0; j < result->length; j++)
         {
-            snprintf(out, sizeof(out), "%d ", result[j]);
+            snprintf(out, sizeof(out), "%d ", result->arr[j]);
             fputs(out, outfile);
         }
         fputs("\n", outfile);
