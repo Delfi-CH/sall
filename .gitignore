@@ -1,2 +1,4 @@
 tinyvm
 tinyvm-as
+*.bin
+!demo/demo.bin

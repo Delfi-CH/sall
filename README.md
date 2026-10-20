@@ -1,3 +1,3 @@
 # tinyvm
 
-tiny 6502-like virtual machine
+tiny 6502-inspired virtual machine

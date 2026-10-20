@@ -23,6 +23,8 @@ typedef enum {
     INN, // 17  -- INN register1 register2 pc   -- if register1 != register2 set program counter to pc
     PRT, // 18  -- PRT register                 -- print contents of a register to stdout
     NOP, // 19  -- NOP                          -- do nothing
+    JMR, // 20  -- JMR register                 -- set program counter to value of register
+    ICR, // 21  -- INR register                 -- increment the program counter by the value of a register
 
 } InstructionSet;
 
@@ -49,5 +51,67 @@ typedef enum {
     UNDEF,      // 8    -- undefined error
 } ErrorCodes;
 
+static const struct
+{
+    InstructionSet instruction;
+    const char *str;
+} instruction_conversion[] = {
+    {HLT, "HLT"},
+    {LDR, "LDR"},
+    {TRR, "TRR"},
+    {PSH, "PSH"},
+    {PSR, "PSR"},
+    {POP, "POP"},
+    {PLR, "PLR"},
+    {SLR, "SLR"},
+    {ADD, "ADD"},
+    {SUB, "SUB"},
+    {MUL, "MUL"},
+    {DIV, "DIV"},
+    {JMP, "JMP"},
+    {INC, "INC"},
+    {IFR, "IFR"},
+    {IRR, "IRR"},
+    {INR, "INR"},
+    {INN, "INN"},
+    {PRT, "PRT"},
+    {NOP, "NOP"},
+    {JMR, "JMR"},
+    {ICR, "ICR"}
+};
+
+static const struct
+{
+    Registers reg;
+    const char *str;
+} register_conversion[] = {
+    {A, "A"},
+    {X, "X"},
+    {Y, "Y"},
+    {Z, "Z"},
+    {ER, "ER"},
+    {PC, "PC"},
+    {SP, "SP"}
+};
+
+static const struct
+{
+    ErrorCodes error;
+    const char *str;
+} error_conversion[] = {
+    {NOERR, "NOERR"},
+    {INVALID, "INVALID"},
+    {NOREGISTER, "NOREGISTER"},
+    {STOVERFLOW, "STOVERFLOW"},
+    {STUNDERFLOW, "STUNDERFLOW"},
+    {INTOOB, "INTOOB"},
+    {DIVZERO, "DIVZERO"},
+    {PCOOB, "PCOOB"},
+    {UNDEF, "UNDEF"}
+};
+ 
+InstructionSet str2ins(const char *str);
+Registers str2reg(const char *str);
+ErrorCodes str2err(const char *str);
 
 #endif
