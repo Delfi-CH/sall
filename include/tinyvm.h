@@ -2,9 +2,10 @@
 
 #define TINYVM_H
 
-typedef enum {
+typedef enum
+{
     HLT, // 0   -- HLT                          -- stops the program
-    LDR, // 1   -- LDR register value           -- load a value into a register 
+    LDR, // 1   -- LDR register value           -- load a value into a register
     TRR, // 2   -- TRR register1 register2      -- transfer value from register 1 to register 2
     PSH, // 3   -- PSH value                    -- push a value onto the stack
     PSR, // 4   -- PSR register                 -- push the value of a register onto the stack
@@ -28,7 +29,8 @@ typedef enum {
 
 } InstructionSet;
 
-typedef enum {
+typedef enum
+{
     A,  // 0 -- accumulator, used for math
     X,  // 1 -- general purpose
     Y,  // 2 -- general purpose
@@ -39,16 +41,17 @@ typedef enum {
     REGISTER_SIZE
 } Registers;
 
-typedef enum {
-    NOERR,      // 0    -- no errors
-    INVALID,    // 1    -- invalid instruction or missing operands, halts the machine
-    NOREGISTER, // 2    -- the register the instruction is trying to access doesnt exist
-    STOVERFLOW, // 3    -- the stack is full and gets overflown
-    STUNDERFLOW,// 4    -- the stack is empty and cant be popped
-    INTOOB,     // 5    -- the result of an operation is outside of the integer range
-    DIVZERO,    // 6    -- divide by 0
-    PCOOB,      // 7    -- program counter is out of bounds
-    UNDEF,      // 8    -- undefined error
+typedef enum
+{
+    NOERR,       // 0    -- no errors
+    INVALID,     // 1    -- invalid instruction or missing operands, halts the machine
+    NOREGISTER,  // 2    -- the register the instruction is trying to access doesnt exist
+    STOVERFLOW,  // 3    -- the stack is full and gets overflown
+    STUNDERFLOW, // 4    -- the stack is empty and cant be popped
+    INTOOB,      // 5    -- the result of an operation is outside of the integer range
+    DIVZERO,     // 6    -- divide by 0
+    PCOOB,       // 7    -- program counter is out of bounds
+    UNDEF,       // 8    -- undefined error
 } ErrorCodes;
 
 static const struct
@@ -77,8 +80,7 @@ static const struct
     {PRT, "PRT"},
     {NOP, "NOP"},
     {JMR, "JMR"},
-    {ICR, "ICR"}
-};
+    {ICR, "ICR"}};
 
 static const struct
 {
@@ -91,8 +93,7 @@ static const struct
     {Z, "Z"},
     {ER, "ER"},
     {PC, "PC"},
-    {SP, "SP"}
-};
+    {SP, "SP"}};
 
 static const struct
 {
@@ -107,9 +108,8 @@ static const struct
     {INTOOB, "INTOOB"},
     {DIVZERO, "DIVZERO"},
     {PCOOB, "PCOOB"},
-    {UNDEF, "UNDEF"}
-};
- 
+    {UNDEF, "UNDEF"}};
+
 InstructionSet str2ins(const char *str);
 Registers str2reg(const char *str);
 ErrorCodes str2err(const char *str);

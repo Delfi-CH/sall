@@ -6,36 +6,45 @@
 #define MAX_FILE_LENGTH 1024
 #define LINE_LENGTH 512
 
-int *eval_line(char *line) {
+int *eval_line(char *line)
+{
     char tokarr[5][64];
     char *token = strtok(line, " ");
     static int result[5] = {0};
 
     int count = 0;
 
-    while (token != NULL) {
+    while (token != NULL)
+    {
         strcpy(tokarr[count++], token);
 
         token = strtok(NULL, " ");
     }
-    
-    for (int i = 0; i < count; i++) {
+
+    for (int i = 0; i < count; i++)
+    {
         int got = atoi(tokarr[i]);
-        if (got == 0) {
+        if (got == 0)
+        {
             int ins = str2ins(tokarr[i]);
             int reg = str2reg(tokarr[i]);
-            if (ins >= 0) {
+            if (ins >= 0)
+            {
                 got = ins;
-            } else if (reg >= 0) {
+            }
+            else if (reg >= 0)
+            {
                 got = reg;
-            } else {
+            }
+            else
+            {
                 got = 0;
             }
         }
         result[i] = got;
     }
 
-    return result;        
+    return result;
 }
 
 int main(int argc, char **argv)
@@ -54,10 +63,10 @@ int main(int argc, char **argv)
     }
 
     FILE *outfile = fopen(argv[2], "w");
-    if (!outfile) 
+    if (!outfile)
     {
         printf("error: could not write to outfile `%s`", argv[2]);
-        return 1;       
+        return 1;
     }
 
     char *linearr[MAX_FILE_LENGTH];
@@ -85,7 +94,8 @@ int main(int argc, char **argv)
     {
         char out[12];
         int *result = eval_line(linearr[i]);
-        for (int j = 0; j < 5; j++) {
+        for (int j = 0; j < 5; j++)
+        {
             snprintf(out, sizeof(out), "%d ", result[j]);
             fputs(out, outfile);
         }
