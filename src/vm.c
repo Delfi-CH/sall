@@ -66,7 +66,7 @@ void print_memory()
     time_t unixtime = time(NULL);
     long int unixtime_int = (long int)unixtime;
     char filename[512];
-    snprintf(filename, 512, "tvm-memdump-%d", unixtime_int);
+    snprintf(filename, 512, "sall-memdump-%d", unixtime_int);
     FILE *file = fopen(filename, "w");
     printf("Writing Memory Dump to file %s\n", filename);
     for (int i = 0; i < MEM_SIZE; i++)

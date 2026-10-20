@@ -1,12 +1,12 @@
-all: tvm tvm-as
+all: sall-vm sall-as
 
-tvm: src/vm.c src/shared.c
-	$(CC) src/vm.c src/shared.c -o tvm
+sall-vm: src/vm.c src/shared.c
+	$(CC) src/vm.c src/shared.c -o $@
 
-tvm-as: src/as.c src/shared.c
-	$(CC) src/as.c src/shared.c -o tvm-as
+sall-as: src/as.c src/shared.c
+	$(CC) src/as.c src/shared.c -o $@
 
 .PHONY: clean
 
 clean:
-	rm -f tvm*
+	rm -f sall-*

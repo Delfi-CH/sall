@@ -1,3 +1,3 @@
-# tinyvm
+# sall
 
-tiny 6502-inspired virtual machine
+small assembly like language
