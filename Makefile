@@ -1,3 +1,5 @@
+.PHONY: all
+
 all: sall-vm sall-as
 
 sall-vm: src/vm.c src/shared.c
@@ -10,3 +12,14 @@ sall-as: src/as.c src/shared.c
 
 clean:
 	rm -f sall-*
+	rm -f demo/*.bin	
+
+.PHONY: demo
+
+demo: demo/demo.bin demo/crash.bin
+
+demo/demo.bin: demo/demo.sal sall-as
+	./sall-as demo/demo.sal demo/demo.bin
+
+demo/crash.bin: demo/crash.sal sall-as
+	./sall-as demo/crash.sal demo/crash.bin
