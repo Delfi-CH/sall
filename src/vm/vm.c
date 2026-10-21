@@ -3,94 +3,84 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include "../include/sall.h"
+#include "../../include/sall.h"
+#include "../../include/vm.h"
 
-#define STACK_SIZE 256
-#define MEM_SIZE 1024
-#define MAX_PROGRAM_LENGTH 1024
-#define LINE_LENGTH 5
+int stack[STACK_SIZE];
+int memory[MEM_SIZE];
+int registers[REGISTER_SIZE];
 
-static int stack[STACK_SIZE];
-static int memory[MEM_SIZE];
+static Program prog;
 
-static int registers[REGISTER_SIZE];
-
-static int program[MAX_PROGRAM_LENGTH][LINE_LENGTH];
-static int program_line_lenghts[MAX_PROGRAM_LENGTH];
-static int program_length = 0;
-
-/** if the program is running */
 static bool running = true;
 
-/** if the IP is assigned by jmp instructions(such as IF,IFN),it should not increase 1 any more **/
+/** if the PC is assigned by jmp instructions,it should not increase 1 any more **/
 bool is_jmp = false;
 
-/** quick ways to get SP and IP */
+bool interrupted = false;
+
+/** quick ways to get SP and PC */
 #define SP (registers[SP])
 #define PC (registers[PC])
 
-/** prints the stack from A to B */
-void print_stack()
-{
-    printf("Stack Dump:\n");
-    for (int i = 0; i < SP; i++)
+void check_err(int instruction[LINE_LENGTH])
+{   
+    bool panic = false;
+    switch (registers[ER])
     {
-        printf("0x%04d ", stack[i]);
-        if ((i + 1) % 4 == 0)
-        {
-            printf("\n");
-        }
-    }
-    if (SP != 0)
+    case NOERR:
     {
-        printf("\n");
+        break;
     }
-}
+    case INVALID:
+    {
+        panic = true;
+        printf("error: invalid instruction at %d, bad instruction or missing operands\n", PC);
+        break;
+    }
+    case NOREGISTER:
+    {
+        panic = true;
+        printf("error: invalid instruction at %d, register %d doesnt exist\n", PC, instruction[1]);
+        break;
+    }
+    case STOVERFLOW:
+    {
+        panic = true;
+        printf("error: stack overflow at %d\n", PC);
+        break;
+    }
+    case STUNDERFLOW:
+    {
+        panic = true;
+        printf("error: stack undeflow at %d\n", PC);
+        break;
+    }
+    case DIVZERO:
+    {
+        panic = true;
+        printf("error: divide by zero at %d\n", PC);
+        break;
+    }
+    case PCOOB:
+    {
+        panic = true;
+        printf("error: program counter out of bounds\n");
+        break;
+    }
+    default:
+    {
+        panic = true;
+        printf("error: unexpected error\n");
+        break;
+    }
+    }
 
-void print_registers()
-{
-    printf("Register Dump:\n");
-    for (int i = 0; i < REGISTER_SIZE; i++)
-    {
-        printf("%04d ", registers[i]);
-        if ((i + 1) % 4 == 0)
-        {
-            printf("\n");
-        }
-    }
-    printf("\n");
-}
-
-void print_memory()
-{
-    time_t unixtime = time(NULL);
-    long int unixtime_int = (long int)unixtime;
-    char filename[512];
-    snprintf(filename, 512, "sall-memdump-%d", unixtime_int);
-    FILE *file = fopen(filename, "w");
-    printf("Writing Memory Dump to file %s\n", filename);
-    for (int i = 0; i < MEM_SIZE; i++)
-    {
-        fprintf(file, "%04d ", memory[i]);
-        if ((i + 1) % 4 == 0)
-        {
-            fprintf(file, "\n");
-        }
-    }
-    fprintf(file, "\n");
-    fclose(file);
-}
-
-bool is_register(int value)
-{
-    if (value < 0 || value >= REGISTER_SIZE)
-    {
-        registers[ER] = NOREGISTER;
-        return false;
-    }
-    else
-    {
-        return true;
+    if (panic) {
+        running = false;
+        print_stack(registers, stack, SP);
+        print_registers(registers);
+        print_memory(memory);
     }
 }
 
@@ -102,7 +92,7 @@ void eval(int instruction[LINE_LENGTH])
     {
     case HLT:
     {
-        if (program_line_lenghts[PC] < 1)
+        if (prog.line_lengths[PC] < 1)
         {
             registers[ER] = INVALID;
             break;
@@ -116,14 +106,14 @@ void eval(int instruction[LINE_LENGTH])
     }
     case LDR:
     {
-        if (program_line_lenghts[PC] < 3)
+        if (prog.line_lengths[PC] < 3)
         {
             registers[ER] = INVALID;
             break;
         }
         else
         {
-            if (!is_register(instruction[1]))
+            if (!is_register(instruction[1], registers))
             {
                 break;
             }
@@ -133,18 +123,18 @@ void eval(int instruction[LINE_LENGTH])
     }
     case TRR:
     {
-        if (program_line_lenghts[PC] < 3)
+        if (prog.line_lengths[PC] < 3)
         {
             registers[ER] = INVALID;
             break;
         }
         else
         {
-            if (!is_register(instruction[1]))
+            if (!is_register(instruction[1], registers))
             {
                 break;
             }
-            if (!is_register(instruction[2]))
+            if (!is_register(instruction[2], registers))
             {
                 break;
             }
@@ -154,7 +144,7 @@ void eval(int instruction[LINE_LENGTH])
     }
     case PSH:
     {
-        if (program_line_lenghts[PC] < 2)
+        if (prog.line_lengths[PC] < 2)
         {
             registers[ER] = INVALID;
             break;
@@ -173,7 +163,7 @@ void eval(int instruction[LINE_LENGTH])
     }
     case PSR:
     {
-        if (program_line_lenghts[PC] < 2)
+        if (prog.line_lengths[PC] < 2)
         {
             registers[ER] = INVALID;
             break;
@@ -186,7 +176,7 @@ void eval(int instruction[LINE_LENGTH])
                 registers[ER] = STOVERFLOW;
                 break;
             }
-            if (!is_register(instruction[1]))
+            if (!is_register(instruction[1], registers))
             {
                 break;
             }
@@ -196,7 +186,7 @@ void eval(int instruction[LINE_LENGTH])
     }
     case POP:
     {
-        if (program_line_lenghts[PC] < 1)
+        if (prog.line_lengths[PC] < 1)
         {
             registers[ER] = INVALID;
             break;
@@ -213,7 +203,7 @@ void eval(int instruction[LINE_LENGTH])
     }
     case PLR:
     {
-        if (program_line_lenghts[PC] < 2)
+        if (prog.line_lengths[PC] < 2)
         {
             registers[ER] = INVALID;
             break;
@@ -225,7 +215,7 @@ void eval(int instruction[LINE_LENGTH])
             {
                 registers[ER] = STUNDERFLOW;
             }
-            if (!is_register(instruction[1]))
+            if (!is_register(instruction[1], registers))
             {
                 break;
             }
@@ -236,14 +226,14 @@ void eval(int instruction[LINE_LENGTH])
     }
     case SLR:
     {
-        if (program_line_lenghts[PC] < 2)
+        if (prog.line_lengths[PC] < 2)
         {
             registers[ER] = INVALID;
             break;
         }
         else
         {
-            if (!is_register(instruction[1]))
+            if (!is_register(instruction[1], registers))
             {
                 break;
             }
@@ -253,14 +243,14 @@ void eval(int instruction[LINE_LENGTH])
     }
     case ADD:
     {
-        if (program_line_lenghts[PC] < 2)
+        if (prog.line_lengths[PC] < 2)
         {
             registers[ER] = INVALID;
             break;
         }
         else
         {
-            if (!is_register(instruction[1]))
+            if (!is_register(instruction[1], registers))
             {
                 break;
             }
@@ -270,14 +260,14 @@ void eval(int instruction[LINE_LENGTH])
     }
     case SUB:
     {
-        if (program_line_lenghts[PC] < 2)
+        if (prog.line_lengths[PC] < 2)
         {
             registers[ER] = INVALID;
             break;
         }
         else
         {
-            if (!is_register(instruction[1]))
+            if (!is_register(instruction[1], registers))
             {
                 break;
             }
@@ -287,14 +277,14 @@ void eval(int instruction[LINE_LENGTH])
     }
     case MUL:
     {
-        if (program_line_lenghts[PC] < 2)
+        if (prog.line_lengths[PC] < 2)
         {
             registers[ER] = INVALID;
             break;
         }
         else
         {
-            if (!is_register(instruction[1]))
+            if (!is_register(instruction[1], registers))
             {
                 break;
             }
@@ -304,14 +294,14 @@ void eval(int instruction[LINE_LENGTH])
     }
     case DIV:
     {
-        if (program_line_lenghts[PC] < 2)
+        if (prog.line_lengths[PC] < 2)
         {
             registers[ER] = INVALID;
             break;
         }
         else
         {
-            if (!is_register(instruction[1]))
+            if (!is_register(instruction[1], registers))
             {
                 break;
             }
@@ -326,14 +316,14 @@ void eval(int instruction[LINE_LENGTH])
     }
     case JMP:
     {
-        if (program_line_lenghts[PC] < 2)
+        if (prog.line_lengths[PC] < 2)
         {
             registers[ER] = INVALID;
             break;
         }
         else
         {
-            if (instruction[1] > program_length)
+            if (instruction[1] > prog.length)
             {
                 registers[ER] = PCOOB;
                 break;
@@ -345,14 +335,14 @@ void eval(int instruction[LINE_LENGTH])
     }
     case INC:
     {
-        if (program_line_lenghts[PC] < 2)
+        if (prog.line_lengths[PC] < 2)
         {
             registers[ER] = INVALID;
             break;
         }
         else
         {
-            if (instruction[1] + PC > program_length)
+            if (instruction[1] + PC > prog.length)
             {
                 registers[ER] = PCOOB;
                 break;
@@ -364,18 +354,18 @@ void eval(int instruction[LINE_LENGTH])
     }
     case IFR:
     {
-        if (program_line_lenghts[PC] < 4)
+        if (prog.line_lengths[PC] < 4)
         {
             registers[ER] = INVALID;
             break;
         }
         else
         {
-            if (!is_register(instruction[1]))
+            if (!is_register(instruction[1], registers))
             {
                 break;
             }
-            if (instruction[3] > program_length)
+            if (instruction[3] > prog.length)
             {
                 registers[ER] = PCOOB;
                 break;
@@ -389,22 +379,22 @@ void eval(int instruction[LINE_LENGTH])
     }
     case IRR:
     {
-        if (program_line_lenghts[PC] < 4)
+        if (prog.line_lengths[PC] < 4)
         {
             registers[ER] = INVALID;
             break;
         }
         else
         {
-            if (!is_register(instruction[1]))
+            if (!is_register(instruction[1], registers))
             {
                 break;
             }
-            if (!is_register(instruction[2]))
+            if (!is_register(instruction[2], registers))
             {
                 break;
             }
-            if (instruction[3] > program_length)
+            if (instruction[3] > prog.length)
             {
                 registers[ER] = PCOOB;
                 break;
@@ -418,18 +408,18 @@ void eval(int instruction[LINE_LENGTH])
     }
     case INR:
     {
-        if (program_line_lenghts[PC] < 4)
+        if (prog.line_lengths[PC] < 4)
         {
             registers[ER] = INVALID;
             break;
         }
         else
         {
-            if (!is_register(instruction[1]))
+            if (!is_register(instruction[1], registers))
             {
                 break;
             }
-            if (instruction[3] > program_length)
+            if (instruction[3] > prog.length)
             {
                 registers[ER] = PCOOB;
                 break;
@@ -443,22 +433,22 @@ void eval(int instruction[LINE_LENGTH])
     }
     case INN:
     {
-        if (program_line_lenghts[PC] < 4)
+        if (prog.line_lengths[PC] < 4)
         {
             registers[ER] = INVALID;
             break;
         }
         else
         {
-            if (!is_register(instruction[1]))
+            if (!is_register(instruction[1], registers))
             {
                 break;
             }
-            if (!is_register(instruction[2]))
+            if (!is_register(instruction[2], registers))
             {
                 break;
             }
-            if (instruction[3] > program_length)
+            if (instruction[3] > prog.length)
             {
                 registers[ER] = PCOOB;
                 break;
@@ -472,14 +462,14 @@ void eval(int instruction[LINE_LENGTH])
     }
     case PRT:
     {
-        if (program_line_lenghts[PC] < 2)
+        if (prog.line_lengths[PC] < 2)
         {
             registers[ER] = INVALID;
             break;
         }
         else
         {
-            if (!is_register(instruction[1]))
+            if (!is_register(instruction[1], registers))
             {
                 break;
             }
@@ -489,7 +479,7 @@ void eval(int instruction[LINE_LENGTH])
     }
     case NOP:
     {
-        if (program_line_lenghts[PC] < 1)
+        if (prog.line_lengths[PC] < 1)
         {
             registers[ER] = INVALID;
             break;
@@ -501,18 +491,18 @@ void eval(int instruction[LINE_LENGTH])
     }
     case JMR:
     {
-        if (program_line_lenghts[PC] < 2)
+        if (prog.line_lengths[PC] < 2)
         {
             registers[ER] = INVALID;
             break;
         }
         else
         {
-            if (!is_register(instruction[1]))
+            if (!is_register(instruction[1], registers))
             {
                 break;
             }
-            if (registers[instruction[1]] > program_length)
+            if (registers[instruction[1]] > prog.length)
             {
                 registers[ER] = PCOOB;
                 break;
@@ -524,18 +514,18 @@ void eval(int instruction[LINE_LENGTH])
     }
     case ICR:
     {
-        if (program_line_lenghts[PC] < 2)
+        if (prog.line_lengths[PC] < 2)
         {
             registers[ER] = INVALID;
             break;
         }
         else
         {
-            if (!is_register(instruction[1]))
+            if (!is_register(instruction[1], registers))
             {
                 break;
             }
-            if (registers[instruction[1]] + PC > program_length)
+            if (registers[instruction[1]] + PC > prog.length)
             {
                 registers[ER] = PCOOB;
                 break;
@@ -551,132 +541,20 @@ void eval(int instruction[LINE_LENGTH])
         break;
     }
     }
-
-    switch (registers[ER])
-    {
-    case NOERR:
-    {
-        break;
-    }
-    case INVALID:
-    {
-        running = false;
-        printf("error: invalid instruction at %d, bad instruction or missing operands\n", PC);
-        print_stack();
-        print_registers();
-        print_memory();
-        break;
-    }
-    case NOREGISTER:
-    {
-        running = false;
-        printf("error: invalid instruction at %d, register %d doesnt exist\n", PC, instruction[1]);
-        print_stack();
-        print_registers();
-        print_memory();
-        break;
-    }
-    case STOVERFLOW:
-    {
-        running = false;
-        printf("error: stack overflow at %d\n", PC);
-        print_stack();
-        print_registers();
-        print_memory();
-        break;
-    }
-    case STUNDERFLOW:
-    {
-        running = false;
-        printf("error: stack undeflow at %d\n", PC);
-        print_stack();
-        print_registers();
-        print_memory();
-        break;
-    }
-    case DIVZERO:
-    {
-        running = false;
-        printf("error: divide by zero at %d\n", PC);
-        print_stack();
-        print_registers();
-        print_memory();
-        break;
-    }
-    case PCOOB:
-    {
-        running = false;
-        printf("error: program counter out of bounds\n");
-        print_stack();
-        print_registers();
-        print_memory();
-        break;
-    }
-    default:
-    {
-        running = false;
-        printf("error: unexpected error\n");
-        break;
-    }
-    }
+    check_err(instruction);
 }
 
-int main(int argc, char **argv)
+void begin_vm(Program *inprog)
 {
-    if (argc <= 1)
-    {
-        printf("error: no input files\n");
-        return -1;
-    }
-
-    char *filename = argv[1];
-
-    FILE *file = fopen(filename, "r");
-    if (!file)
-    {
-        printf("error: could not read file `%s`\n", filename);
-        return -1;
-    }
-
-    char line[512];
-
-    char *firstline = fgets(line, sizeof line, file);
-
-    if (strcmp(firstline, file_header)) {
-        printf("error: invalid program, missing or invalid file header!\n");
-        printf("your program may be corrupted, try re-assembling it\n");
-        return -1;
-    }
-
-    while (fgets(line, sizeof line, file) && program_length < MAX_PROGRAM_LENGTH)
-    {
-        int arr[LINE_LENGTH];
-        int index = 0;
-
-        char *token = strtok(line, " \t\n");
-
-        while (token != NULL && index < LINE_LENGTH)
-        {
-            program[program_length][index++] = atoi(token);
-            token = strtok(NULL, " \t\n");
-        }
-
-        program_line_lenghts[program_length] = index;
-        program_length++;
-    }
-
-    fclose(file);
-
+    prog = *inprog;
     SP = -1;
 
-    while (running && PC < program_length)
+    while (running && PC < prog.length)
     {
-        eval(program[PC]);
+        eval(prog.data[PC]);
         if (!is_jmp)
         {
             PC++;
         }
     }
-
-    return 0;
 }

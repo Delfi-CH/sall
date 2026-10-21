@@ -2,8 +2,8 @@
 
 all: sall-vm sall-as
 
-sall-vm: src/vm.c src/shared.c include/sall.h
-	$(CC) src/vm.c src/shared.c -o $@
+sall-vm: src/vm/main.c src/vm/vm.c src/vm/utils.c src/shared.c include/sall.h include/vm.h
+	$(CC) src/vm/main.c src/vm/vm.c src/vm/utils.c src/shared.c -o $@
 
 sall-as: src/as.c src/shared.c include/sall.h
 	$(CC) src/as.c src/shared.c -o $@
