@@ -28,19 +28,20 @@ typedef enum
     ICR, // 21  -- INR register                     -- increment the program counter by the value of a register
     SLP, // 22  -- SLP value                        -- sleep for value milliseconds
     SPR, // 23  -- SPR register                     -- sleep for value of a register seconds
+    IKB, // 25  -- IOK register                     -- get 1 character of keyboard input and write it into a register
 
 } InstructionSet;
 
 typedef enum
 {
-    A,  // 0 -- accumulator, used for math
-    X,  // 1 -- general purpose
-    Y,  // 2 -- general purpose
-    Z,  // 3 -- general purpose
-    ER, // 4 -- error, contains the current error values
-    PC, // 5 -- program counter
-    SP, // 6 -- stack pointer
-    IM, // 7 -- interrupt mask
+    A,      // 0 -- accumulator, used for math
+    X,      // 1 -- general purpose
+    Y,      // 2 -- general purpose
+    Z,      // 3 -- general purpose
+    ER,     // 4 -- error, contains the current error values
+    PC,     // 5 -- program counter
+    SP,     // 6 -- stack pointer
+    IM,     // 7 -- interrupt mask
     REGISTER_SIZE
 } Registers;
 
@@ -62,6 +63,10 @@ typedef enum {
     KEYBOARD,   // 1    -- disable keyboard interrupts    
     CONSOLE,    // 2    -- disable console output interrupts
     KBCO,       // 3    -- disable keyboard and console interrupts
+    RANDOM,     // 4    -- disable random register interrupts
+    KBRA,       // 5    -- disable keyboard and random interrupts
+    CORA,       // 6    -- disable console and random interrupts
+    KBCORA,     // 7    -- disable keyboard, console and random interrupts
 } InterruptMask;
 
 typedef enum {
@@ -99,6 +104,7 @@ static const struct
     {ICR, "ICR"},
     {SLP, "SLP"},
     {SPR, "SPR"},
+    {IKB, "IKB"},
 };
 
 static const struct
@@ -139,7 +145,11 @@ static const struct
     {NONE, "NONE"},
     {KEYBOARD, "KEYBOARD"},
     {CONSOLE, "CONSOLE"},
-    {KBCO, "KBCO"}
+    {KBCO, "KBCO"},
+    {RANDOM, "RANDOM"},
+    {KBRA, "KBRA"},
+    {CORA, "CORA"},
+    {KBCORA, "KBCORA"}
 };
 
 static const struct 

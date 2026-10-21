@@ -5,6 +5,7 @@
 #include <time.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <sys/wait.h>
 #include "../../include/sall.h"
 #include "../../include/vm.h"
 
@@ -520,7 +521,7 @@ void eval(int instruction[LINE_LENGTH])
                 break;
             }
             pid_t pid;
-            if (registers[IM] == 2 | registers[IM] == 3)
+            if (registers[IM] == 2 || registers[IM] == 3 || registers[IM] == 6 || registers[IM] == 7 )
             {
                 pid = fork();
             }
@@ -626,6 +627,51 @@ void eval(int instruction[LINE_LENGTH])
             dur.tv_sec = instruction[1] / 1000;
             dur.tv_nsec = (instruction[1] % 1000) * 1000000L;
             nanosleep(&dur, &remaining);
+            break;
+        }
+    }
+    case IKB: {
+        if (prog.line_lengths[PC] < 2)
+        {
+            registers[ER] = INVALID;
+            break;
+        }
+        else {
+            if (!is_register(instruction[1], registers))
+            {
+                break;
+            }
+            pid_t pid;
+            int p[2];
+            pipe(p);
+            bool no_vfork = registers[IM] == 1 || registers[IM] == 3 || registers[IM] == 5 || registers[IM] == 7;
+            if (no_vfork)
+            {
+                pid = fork();
+            }
+            else
+            {
+                pid = vfork();
+            }
+            if (pid == 0) {
+                if (no_vfork) {
+                    printf("input a character: ");
+                    int got = getchar();
+                    char buf[32];
+                    snprintf(buf, sizeof(buf) - 1, "%d", got);
+                    write(p[1], buf, sizeof(buf) - 1);
+                    _exit(0);
+                } else {
+                    printf("input a character: ");
+                    registers[instruction[1]] = getchar();
+                    _exit(0);
+                }
+            }
+            if (no_vfork) {
+                char data[32];
+                read(p[0], data , sizeof(data) - 1);
+                registers[instruction[1]] = atoi(data);
+            }
             break;
         }
     }
