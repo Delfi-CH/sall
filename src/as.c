@@ -29,9 +29,11 @@ LineResult *eval_line(char *line)
     {
         int got = atoi(tokarr[i]);
         if (got == 0)
-        {
+        {   
             int ins = str2ins(tokarr[i]);
             int reg = str2reg(tokarr[i]);
+            int mask = str2interrupt_mask(tokarr[i]);
+            int print_mode = str2prtint_mode(tokarr[i]);
             if (ins >= 0)
             {
                 got = ins;
@@ -39,6 +41,14 @@ LineResult *eval_line(char *line)
             else if (reg >= 0)
             {
                 got = reg;
+            }
+            else if (mask >= 0)
+            {
+                got = mask;
+            }
+            else if (print_mode >= 0)
+            {
+                got = print_mode;
             }
         }
         arr[i] = got;

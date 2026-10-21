@@ -16,10 +16,13 @@ clean:
 
 .PHONY: demo
 
-demo: demo/demo.bin demo/crash.bin
+demo: demo/demo.bin demo/crash.bin demo/loop.bin
 
 demo/demo.bin: demo/demo.sal sall-as
 	./sall-as demo/demo.sal demo/demo.bin
 
 demo/crash.bin: demo/crash.sal sall-as
 	./sall-as demo/crash.sal demo/crash.bin
+
+demo/loop.bin: demo/loop.sal sall-as
+	./sall-as demo/loop.sal demo/loop.bin

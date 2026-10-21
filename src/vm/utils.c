@@ -19,6 +19,14 @@ bool is_register(int value, int registers[REGISTER_SIZE])
     }
 }
 
+void print_instruction(int instruction[LINE_LENGTH]) {
+    printf("Current Instruction:\n");
+    for (int i = 0; i < LINE_LENGTH; i++) {
+        printf("%d ", instruction[1]);
+    }
+    printf("\n");
+}
+
 void print_stack(int registers[REGISTER_SIZE], int stack[STACK_SIZE], int SP)
 {
     printf("Stack Dump:\n");

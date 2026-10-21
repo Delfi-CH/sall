@@ -27,3 +27,19 @@ ErrorCodes str2err(const char *str)
             return error_conversion[j].error;
     return -1;
 }
+
+InterruptMask str2interrupt_mask(const char *str) {
+    int j;
+    for (j = 0; j < sizeof(interrupt_mask_conversion) / sizeof(interrupt_mask_conversion[0]); ++j)
+        if (!strcmp(str, interrupt_mask_conversion[j].str))
+            return interrupt_mask_conversion[j].mask;
+    return -1;
+}
+
+PrintMode str2prtint_mode(const char *str) {
+    int j;
+    for (j = 0; j < sizeof(print_mode_conversion) / sizeof(print_mode_conversion[0]); ++j)
+        if (!strcmp(str, print_mode_conversion[j].str))
+            return print_mode_conversion[j].mode;
+    return -1;
+}

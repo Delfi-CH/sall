@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <sys/types.h>
+#include <unistd.h>
 #include "../../include/sall.h"
 #include "../../include/vm.h"
 
@@ -23,8 +25,30 @@ bool interrupted = false;
 #define SP (registers[SP])
 #define PC (registers[PC])
 
+void prt(int value, PrintMode mode)
+{
+    switch (mode)
+    {
+    case DECIMAL:
+    {
+        printf("%d", value);
+        break;
+    }
+    case HEX:
+    {
+        printf("0x%x", value);
+        break;
+    }
+    case CHAR:
+    {
+        printf("%c", value);
+        break;
+    }
+    }
+}
+
 void check_err(int instruction[LINE_LENGTH])
-{   
+{
     bool panic = false;
     switch (registers[ER])
     {
@@ -76,8 +100,10 @@ void check_err(int instruction[LINE_LENGTH])
     }
     }
 
-    if (panic) {
+    if (panic)
+    {
         running = false;
+        print_instruction(instruction);
         print_stack(registers, stack, SP);
         print_registers(registers);
         print_memory(memory);
@@ -354,7 +380,7 @@ void eval(int instruction[LINE_LENGTH])
     }
     case IFR:
     {
-        if (prog.line_lengths[PC] < 4)
+        if (prog.line_lengths[PC] < 5)
         {
             registers[ER] = INVALID;
             break;
@@ -372,14 +398,18 @@ void eval(int instruction[LINE_LENGTH])
             }
             if (registers[instruction[1]] == instruction[2])
             {
-                PC = instruction[3];
+                PC = PC + instruction[3];
+            }
+            else
+            {
+                PC = PC + instruction[4];
             }
             break;
         }
     }
     case IRR:
     {
-        if (prog.line_lengths[PC] < 4)
+        if (prog.line_lengths[PC] < 5)
         {
             registers[ER] = INVALID;
             break;
@@ -401,14 +431,18 @@ void eval(int instruction[LINE_LENGTH])
             }
             if (registers[instruction[1]] == registers[instruction[2]])
             {
-                PC = instruction[3];
+                PC = PC + instruction[3];
+            }
+            else
+            {
+                PC = PC + instruction[4];
             }
             break;
         }
     }
     case INR:
     {
-        if (prog.line_lengths[PC] < 4)
+        if (prog.line_lengths[PC] < 5)
         {
             registers[ER] = INVALID;
             break;
@@ -426,14 +460,18 @@ void eval(int instruction[LINE_LENGTH])
             }
             if (registers[instruction[1]] != instruction[2])
             {
-                PC = instruction[3];
+                PC = PC + instruction[3];
+            }
+            else
+            {
+                PC = PC + instruction[4];
             }
             break;
         }
     }
     case INN:
     {
-        if (prog.line_lengths[PC] < 4)
+        if (prog.line_lengths[PC] < 5)
         {
             registers[ER] = INVALID;
             break;
@@ -455,14 +493,18 @@ void eval(int instruction[LINE_LENGTH])
             }
             if (registers[instruction[1]] != registers[instruction[2]])
             {
-                PC = instruction[3];
+                PC = PC + instruction[3];
+            }
+            else
+            {
+                PC = PC + instruction[4];
             }
             break;
         }
     }
     case PRT:
     {
-        if (prog.line_lengths[PC] < 2)
+        if (prog.line_lengths[PC] < 3)
         {
             registers[ER] = INVALID;
             break;
@@ -473,7 +515,25 @@ void eval(int instruction[LINE_LENGTH])
             {
                 break;
             }
-            printf("%d\n", registers[instruction[1]]);
+            if (instruction[2] < 0 || instruction[2] > 2)
+            {
+                break;
+            }
+            pid_t pid;
+            if (registers[IM] == 2 | registers[IM] == 3)
+            {
+                pid = fork();
+            }
+            else
+            {
+                pid = vfork();
+            }
+
+            if (pid == 0)
+            {
+                prt(registers[instruction[1]], instruction[2]);
+                _exit(0);
+            }
             break;
         }
     }
@@ -535,6 +595,40 @@ void eval(int instruction[LINE_LENGTH])
             break;
         }
     }
+    case SLP: {
+        if (prog.line_lengths[PC] < 2)
+        {
+            registers[ER] = INVALID;
+            break;
+        }
+        else {
+            struct timespec dur = {0};
+            struct timespec remaining;
+            dur.tv_sec = instruction[1] / 1000;
+            dur.tv_nsec = (instruction[1] % 1000) * 1000000L;
+            nanosleep(&dur, &remaining);
+            break;
+        }
+    }
+    case SPR: {
+        if (prog.line_lengths[PC] < 2)
+        {
+            registers[ER] = INVALID;
+            break;
+        }
+        else {
+            if (!is_register(instruction[1], registers))
+            {
+                break;
+            }
+            struct timespec dur = {0};
+            struct timespec remaining;
+            dur.tv_sec = instruction[1] / 1000;
+            dur.tv_nsec = (instruction[1] % 1000) * 1000000L;
+            nanosleep(&dur, &remaining);
+            break;
+        }
+    }
     default:
     {
         registers[ER] = INVALID;
@@ -546,6 +640,10 @@ void eval(int instruction[LINE_LENGTH])
 
 void begin_vm(Program *inprog)
 {
+    struct timespec freq = {0};
+    struct timespec remaining;
+    freq.tv_sec = 0;
+    freq.tv_nsec = 1000;
     prog = *inprog;
     SP = -1;
 
@@ -556,5 +654,6 @@ void begin_vm(Program *inprog)
         {
             PC++;
         }
+        nanosleep(&freq, &remaining);
     }
 }

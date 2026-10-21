@@ -20,6 +20,7 @@ typedef struct program {
 
 void begin_vm(Program *prog);
 
+void print_instruction(int instruction[LINE_LENGTH]);
 void print_stack(int registers[REGISTER_SIZE], int stack[STACK_SIZE], int SP);
 void print_registers(int registers[REGISTER_SIZE]);
 void print_memory(int memory[MEM_SIZE]);
