@@ -640,6 +640,14 @@ int main(int argc, char **argv)
 
     char line[512];
 
+    char *firstline = fgets(line, sizeof line, file);
+
+    if (strcmp(firstline, file_header)) {
+        printf("error: invalid program, missing or invalid file header!\n");
+        printf("your program may be corrupted, try re-assembling it\n");
+        return -1;
+    }
+
     while (fgets(line, sizeof line, file) && program_length < MAX_PROGRAM_LENGTH)
     {
         int arr[LINE_LENGTH];

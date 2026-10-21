@@ -95,6 +95,8 @@ int main(int argc, char **argv)
 
     fclose(file);
 
+    fputs(file_header, outfile);
+
     for (int i = 0; i < count; i++)
     {
         char out[12];

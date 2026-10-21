@@ -114,4 +114,6 @@ InstructionSet str2ins(const char *str);
 Registers str2reg(const char *str);
 ErrorCodes str2err(const char *str);
 
+static const char *file_header = "sall23\n";
+
 #endif
