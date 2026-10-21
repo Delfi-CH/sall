@@ -2,10 +2,10 @@
 
 all: sall-vm sall-as
 
-sall-vm: src/vm.c src/shared.c
+sall-vm: src/vm.c src/shared.c include/sall.h
 	$(CC) src/vm.c src/shared.c -o $@
 
-sall-as: src/as.c src/shared.c
+sall-as: src/as.c src/shared.c include/sall.h
 	$(CC) src/as.c src/shared.c -o $@
 
 .PHONY: clean

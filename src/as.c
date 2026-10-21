@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../include/tinyvm.h"
+#include "../include/sall.h"
 
 #define MAX_FILE_LENGTH 1024
 #define LINE_LENGTH 512
@@ -56,6 +56,7 @@ int main(int argc, char **argv)
     if (argc <= 2)
     {
         printf("error: no files set\n");
+        printf("usage: %s input.sal output.bin\n", argv[0]);
         return 1;
     }
 

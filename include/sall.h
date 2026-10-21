@@ -1,6 +1,6 @@
-#ifndef TINYVM_H
+#ifndef SALL_H_
 
-#define TINYVM_H
+#define SALL_H_
 
 typedef enum
 {

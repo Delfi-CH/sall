@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include "../include/tinyvm.h"
+#include "../include/sall.h"
 
 #define STACK_SIZE 256
 #define MEM_SIZE 1024

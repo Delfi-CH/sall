@@ -1,4 +1,4 @@
-#include "../include/tinyvm.h"
+#include "../include/sall.h"
 #include <string.h>
 
 InstructionSet str2ins(const char *str)
