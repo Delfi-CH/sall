@@ -16,7 +16,7 @@ clean:
 
 .PHONY: demo
 
-demo: demo/demo.bin demo/crash.bin demo/loop.bin
+demo: demo/demo.bin demo/crash.bin demo/loop.bin demo/hello.bin
 
 demo/demo.bin: demo/demo.sal sall-as
 	./sall-as demo/demo.sal demo/demo.bin
@@ -26,3 +26,6 @@ demo/crash.bin: demo/crash.sal sall-as
 
 demo/loop.bin: demo/loop.sal sall-as
 	./sall-as demo/loop.sal demo/loop.bin
+
+demo/hello.bin: demo/hello.sal sall-as
+	./sall-as demo/hello.sal demo/hello.bin
